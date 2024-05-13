@@ -1,0 +1,132 @@
+services:
+  configserver:
+    build:
+      context: ../configserver
+      dockerfile: ../configserver/Dockerfile
+    container_name: configserver-ms
+    ports:
+      - "8071:8071"
+    healthcheck:
+      test: "curl --fail --silent localhost:8071/actuator/health/readiness | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    environment:
+      SPRING_PROFILES_ACTIVE: "native"
+    extends:
+      file: compose-config.yml
+      service: microservice-base-config
+
+  eurekaserver:
+    build:
+      context: ../eurekaserver
+      dockerfile: ../eurekaserver/Dockerfile
+    container_name: eurekaserver
+    ports:
+      - "8070:8070"
+    depends_on:
+      configserver:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent localhost:8070/actuator/health/readiness | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    environment:
+      SPRING_APPLICATION_NAME: "eurekaserver"
+    extends:
+      file: compose-config.yml
+      service: microservice-configserver-config
+
+  accountsdb:
+    container_name: accountsdb
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: accountsdb
+    extends:
+      file: compose-config.yml
+      service: microservice-db-config
+
+  loansdb:
+    container_name: loansdb
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_DB: loansdb
+    extends:
+      file: compose-config.yml
+      service: microservice-db-config
+
+  cardsdb:
+    container_name: cardsdb
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: cardsdb
+    extends:
+      file: compose-config.yml
+      service: microservice-db-config
+
+  accounts:
+    build:
+      context: ../accounts
+      dockerfile: ../accounts/Dockerfile
+    container_name: accounts-ms
+    ports:
+      - "8080:8080"
+    depends_on:
+      accountsdb:
+        condition: service_healthy
+      configserver:
+        condition: service_healthy
+    environment:
+      SPRING_APPLICATION_NAME: "accounts"
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://accountsdb:5432/accountsdb"
+    extends:
+      file: compose-config.yml
+      service: microservice-eurekaserver-config
+
+  loans:
+    build:
+      context: ../loans
+      dockerfile: ../loans/Dockerfile
+    container_name: loans-ms
+    ports:
+      - "8090:8090"
+    depends_on:
+      loansdb:
+        condition: service_healthy
+      configserver:
+        condition: service_healthy
+    environment:
+      SPRING_APPLICATION_NAME: "loans"
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://loansdb:5432/loansdb"
+    extends:
+      file: compose-config.yml
+      service: microservice-eurekaserver-config
+
+  cards:
+    build:
+      context: ../cards
+      dockerfile: ../cards/Dockerfile
+    container_name: cards-ms
+    ports:
+      - "9000:9000"
+    depends_on:
+      cardsdb:
+        condition: service_healthy
+      configserver:
+        condition: service_healthy
+    environment:
+      SPRING_APPLICATION_NAME: "cards"
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://cardsdb:5432/cardsdb"
+    extends:
+      file: compose-config.yml
+      service: microservice-eurekaserver-config
+
+networks:
+  loanshark:
+    driver: "bridge"
