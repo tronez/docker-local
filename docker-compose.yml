@@ -127,6 +127,21 @@ services:
       file: compose-config.yml
       service: microservice-eurekaserver-config
 
+  gatewayserver:
+    build:
+      context: ../gatewayserver
+      dockerfile: ../gatewayserver/Dockerfile
+    container_name: gatewayserver
+    ports:
+      - "8072:8072"
+    depends_on:
+      - accounts
+      - cards
+      - loans
+    extends:
+      file: compose-config.yml
+      service: microservice-eurekaserver-config
+
 networks:
   loanshark:
     driver: "bridge"
