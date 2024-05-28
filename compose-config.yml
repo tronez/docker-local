@@ -2,7 +2,7 @@ services:
   network-deploy-service:
     networks:
       - loanshark
-
+# DB ONLY CONFIG
   microservice-db-config:
     extends:
       service: network-deploy-service
@@ -16,9 +16,6 @@ services:
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
-      JAVA_TOOL_OPTIONS: "-javaagent:/app/libs/opentelemetry-javaagent-1.32.0.jar"
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317
-      OTEL_METRICS_EXPORTER: none
 
   microservice-base-config:
     extends:
@@ -29,6 +26,9 @@ services:
           memory: 700m
     environment:
       SPRING_PROFILES_ACTIVE: default
+      JAVA_TOOL_OPTIONS: "-javaagent:/app/libs/opentelemetry-javaagent-1.32.0.jar"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317
+      OTEL_METRICS_EXPORTER: none
 
   microservice-configserver-config:
     extends:
